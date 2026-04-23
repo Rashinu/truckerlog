@@ -9,6 +9,10 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput
 
+RUN chmod +x start.sh
+# Convert CRLF to LF in case of Windows line endings
+RUN sed -i 's/\r//' start.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "gunicorn backend.wsgi --bind 0.0.0.0:${PORT:-8000}"]
+ENTRYPOINT ["/bin/sh", "start.sh"]
