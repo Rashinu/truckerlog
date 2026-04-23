@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(rm backend/Procfile)",
+      "Bash(rm backend/start.sh)"
+    ]
+  }
+}
