@@ -11,4 +11,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD gunicorn backend.wsgi --bind 0.0.0.0:$PORT
+CMD ["sh", "-c", "gunicorn backend.wsgi --bind 0.0.0.0:${PORT:-8000}"]
