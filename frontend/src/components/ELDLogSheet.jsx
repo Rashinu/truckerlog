@@ -1,22 +1,22 @@
 /**
- * ELD Daily Log Sheet — visually matches the official FMCSA Driver's Daily Log format.
- * 24-hour grid with 4 duty status rows (Off Duty, Sleeper Berth, Driving, On Duty Not Driving).
- * Each hour = 1 column, each 15-min = 1 cell (96 cells total per row).
+ * ELD Daily Log Sheet — matches FMCSA Driver's Daily Log format exactly.
+ * 24-hour horizontal grid, 4 duty-status rows, SVG rendering.
  */
 
 const STATUS_ROWS = [
-  { key: 'off_duty',           label: 'Off Duty',              row: 0, color: '#64748b' },
-  { key: 'sleeper_berth',      label: 'Sleeper Berth',         row: 1, color: '#7c3aed' },
-  { key: 'driving',            label: 'Driving',               row: 2, color: '#2563eb' },
-  { key: 'on_duty_not_driving',label: 'On Duty (Not Driving)', row: 3, color: '#16a34a' },
+  { key: 'off_duty',            label: '1. Off Duty',              color: '#6b7280' },
+  { key: 'sleeper_berth',       label: '2. Sleeper Berth',         color: '#7c3aed' },
+  { key: 'driving',             label: '3. Driving',               color: '#1d4ed8' },
+  { key: 'on_duty_not_driving', label: '4. On Duty (Not Driving)', color: '#15803d' },
 ]
 
-const GRID_WIDTH = 960     // px, total width of 24-hour grid
-const ROW_HEIGHT = 32      // px per status row
-const HOUR_WIDTH = GRID_WIDTH / 24  // 40px per hour
+const GRID_W = 960
+const ROW_H = 36
+const LABEL_W = 150
+const TOTAL_W = 56
 
-function hourToX(hour) {
-  return (hour / 24) * GRID_WIDTH
+function px(hour) {
+  return (hour / 24) * GRID_W
 }
 
 export default function ELDLogSheet({ log, route, dayIndex }) {
@@ -25,202 +25,253 @@ export default function ELDLogSheet({ log, route, dayIndex }) {
   const today = new Date()
   const logDate = new Date(today)
   logDate.setDate(today.getDate() + dayIndex)
-  const dateStr = logDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+  const month = String(logDate.getMonth() + 1).padStart(2, '0')
+  const day = String(logDate.getDate()).padStart(2, '0')
+  const year = logDate.getFullYear()
+
+  const totalOnDuty = ((log.hours.driving || 0) + (log.hours.on_duty_not_driving || 0)).toFixed(2)
 
   return (
-    <div className="bg-white text-gray-900 rounded-2xl overflow-hidden shadow-2xl print:shadow-none print:rounded-none">
-      {/* Header */}
-      <div className="bg-gray-50 border-b-2 border-gray-300 p-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-2xl overflow-hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
+
+      {/* ── TOP HEADER ───────────────────────────────────────────── */}
+      <div className="border-b-2 border-gray-400 bg-gray-50 px-5 py-3">
+        <div className="flex justify-between items-start gap-4">
           <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">U.S. Department of Transportation</div>
-            <h2 className="text-xl font-bold text-gray-900">Driver's Daily Log</h2>
+            <div className="text-xs text-gray-500 uppercase tracking-wide">U.S. Department of Transportation</div>
+            <div className="text-2xl font-bold text-gray-900 leading-tight">Driver's Daily Log</div>
             <div className="text-xs text-gray-500">(24 hours)</div>
           </div>
-          <div className="text-right text-xs text-gray-500 space-y-0.5">
-            <div className="font-semibold text-gray-700">Original — File at home terminal</div>
-            <div>Duplicate — Driver retains in his/her possession for 8 days</div>
+          <div className="text-right text-xs text-gray-500 leading-relaxed">
+            <div className="font-medium text-gray-700">Original — File at home terminal</div>
+            <div>Duplicate — Driver retains in possession for 8 days</div>
           </div>
         </div>
 
-        {/* Date + From/To */}
-        <div className="mt-3 grid grid-cols-2 gap-4">
+        {/* Date + From/To row */}
+        <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-0.5">Month / Day / Year</div>
-                <div className="border-b border-gray-400 pb-0.5 font-medium text-sm">{dateStr}</div>
-              </div>
+            <span className="text-xs text-gray-500 block mb-0.5">Month / Day / Year</span>
+            <div className="border-b-2 border-gray-400 pb-0.5 font-semibold text-lg">
+              {month} / {day} / {year}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-xs text-gray-500 mb-0.5">From</div>
-              <div className="border-b border-gray-400 pb-0.5 text-sm font-medium truncate">
-                {route?.origin?.label || '—'}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 mb-0.5">To</div>
-              <div className="border-b border-gray-400 pb-0.5 text-sm font-medium truncate">
-                {route?.dropoff?.label || '—'}
-              </div>
-            </div>
+          <div>
+            <span className="text-xs text-gray-500 block mb-0.5">From</span>
+            <div className="border-b border-gray-400 pb-0.5 truncate">{route?.origin?.label || '—'}</div>
+          </div>
+          <div>
+            <span className="text-xs text-gray-500 block mb-0.5">To</span>
+            <div className="border-b border-gray-400 pb-0.5 truncate">{route?.dropoff?.label || '—'}</div>
           </div>
         </div>
 
-        {/* Mileage + carrier info */}
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        {/* Carrier / mileage row */}
+        <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-xs text-gray-500 mb-0.5">Total Miles Driving Today</div>
-            <div className="border-b border-gray-400 pb-0.5 font-semibold text-sm">{Math.round(log.total_miles)}</div>
+            <span className="text-xs text-gray-500 block mb-0.5">Total Miles Driving Today</span>
+            <div className="border-b border-gray-400 pb-0.5 font-bold text-lg">{Math.round(log.total_miles)}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-0.5">Name of Carrier</div>
-            <div className="border-b border-gray-400 pb-0.5 text-sm">TruckerLog Inc.</div>
+            <span className="text-xs text-gray-500 block mb-0.5">Name of Carrier or Carriers</span>
+            <div className="border-b border-gray-400 pb-0.5">TruckerLog Inc.</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-0.5">Truck/Tractor Numbers</div>
-            <div className="border-b border-gray-400 pb-0.5 text-sm">CMV-001</div>
+            <span className="text-xs text-gray-500 block mb-0.5">Truck / Tractor & Trailer Numbers</span>
+            <div className="border-b border-gray-400 pb-0.5">CMV-001 / TR-2024</div>
           </div>
         </div>
       </div>
 
-      {/* Graph Grid */}
-      <div className="p-4">
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: GRID_WIDTH + 180 }}>
-            {/* Hour labels */}
-            <HourLabels />
+      {/* ── GRAPH GRID ───────────────────────────────────────────── */}
+      <div className="px-5 pt-4 pb-2 overflow-x-auto">
+        <div style={{ minWidth: LABEL_W + GRID_W + TOTAL_W + 8 }}>
 
-            {/* Status rows */}
-            {STATUS_ROWS.map(row => (
-              <GridRow
-                key={row.key}
-                statusKey={row.key}
-                label={row.label}
-                entries={log.entries}
-                color={row.color}
-              />
-            ))}
+          {/* Hour header */}
+          <HourHeader />
 
-            {/* Remarks row */}
-            <RemarksRow entries={log.entries} />
+          {/* Status rows */}
+          {STATUS_ROWS.map(row => (
+            <StatusRow key={row.key} row={row} entries={log.entries} />
+          ))}
 
-            {/* Hour labels (bottom) */}
-            <HourLabels bottom />
+          {/* Remarks strip */}
+          <RemarksStrip entries={log.entries} />
+
+          {/* Hour footer */}
+          <HourHeader bottom />
+        </div>
+      </div>
+
+      {/* ── HOURS SUMMARY ────────────────────────────────────────── */}
+      <div className="px-5 pb-4">
+        <div className="flex flex-wrap gap-2 mt-2">
+          {STATUS_ROWS.map(row => (
+            <div key={row.key} className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50">
+              <div className="w-3 h-3 rounded flex-shrink-0" style={{ background: row.color }} />
+              <span className="text-xs text-gray-600">{row.label}</span>
+              <span className="text-sm font-bold ml-1" style={{ color: row.color }}>
+                {(log.hours[row.key] || 0).toFixed(2)}h
+              </span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5 border-2 border-gray-800 rounded-lg px-3 py-1.5 bg-gray-900 ml-auto">
+            <span className="text-xs text-gray-300">TOTAL</span>
+            <span className="text-sm font-bold text-white">{(Object.values(log.hours).reduce((a,b)=>a+b,0)).toFixed(2)}h</span>
           </div>
         </div>
+      </div>
 
-        {/* Hours summary */}
-        <HoursSummary hours={log.hours} />
+      {/* ── REMARKS ──────────────────────────────────────────────── */}
+      <div className="px-5 pb-4 border-t border-gray-200 pt-3">
+        <div className="text-xs font-bold text-gray-700 uppercase mb-2">Remarks</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+          {log.entries
+            .filter(e => e.location || e.remarks)
+            .map((e, i) => (
+              <div key={i} className="text-xs font-mono text-gray-600">
+                <span className="text-gray-400">{fmt12(e.start_hour)}</span>
+                {' — '}
+                <span className="font-medium">{statusShort(e.status)}</span>
+                {e.location && <span className="text-gray-500"> · {e.location.split(',').slice(0, 2).join(',')}</span>}
+                {e.remarks && <span className="text-blue-600"> ({e.remarks})</span>}
+              </div>
+            ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-3 italic">
+          Enter name of place where you reported and were released from work, and when and where each change of duty status occurred. Use time standard of home terminal.
+        </p>
+      </div>
 
-        {/* Remarks text */}
-        <RemarksText entries={log.entries} />
-
-        {/* Recap / signature */}
-        <Footer log={log} />
+      {/* ── FOOTER / SIGNATURE ───────────────────────────────────── */}
+      <div className="px-5 pb-5 border-t-2 border-gray-300 pt-3 grid grid-cols-2 gap-6">
+        <div>
+          <div className="text-xs text-gray-500 mb-1">Driver's Signature / Certification</div>
+          <div className="border-b-2 border-gray-400 h-8 w-full" />
+          <div className="text-xs text-gray-400 mt-1 italic">I certify that these entries are true and correct.</div>
+        </div>
+        <div className="text-xs text-gray-600 space-y-2">
+          <div className="font-bold text-gray-800 text-sm">Recap (Complete at end of day)</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded p-2 border border-gray-200">
+              <div className="text-gray-500">On-duty hours today (lines 3 & 4)</div>
+              <div className="font-bold text-gray-900 text-base">{totalOnDuty}h</div>
+            </div>
+            <div className="bg-gray-50 rounded p-2 border border-gray-200">
+              <div className="text-gray-500">Miles driven today</div>
+              <div className="font-bold text-gray-900 text-base">{Math.round(log.total_miles)} mi</div>
+            </div>
+          </div>
+          <div className="text-gray-400">70-Hour / 8-Day Cycle (Property Carrier)</div>
+        </div>
       </div>
     </div>
   )
 }
 
-function HourLabels({ bottom = false }) {
-  const hours = [
-    'Mid-\nnight', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-    'Noon', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Mid-\nnight'
-  ]
+/* ── Sub-components ──────────────────────────────────────────────── */
+
+const HOUR_LABELS = [
+  'Mid-\nnight','1','2','3','4','5','6','7','8','9','10','11',
+  'Noon','1','2','3','4','5','6','7','8','9','10','11','Mid-\nnight',
+]
+
+function HourHeader({ bottom = false }) {
   return (
-    <div className="flex" style={{ marginLeft: 140 }}>
-      {hours.map((h, i) => (
+    <div style={{ display: 'flex', marginLeft: LABEL_W, marginRight: TOTAL_W }}>
+      {HOUR_LABELS.map((lbl, i) => (
         <div
           key={i}
-          className="text-center text-gray-500 border-l border-gray-300"
-          style={{ width: i === 24 ? HOUR_WIDTH / 2 : HOUR_WIDTH, flexShrink: 0, fontSize: 9, lineHeight: '1.2' }}
+          style={{
+            width: i === 0 || i === 24 ? GRID_W / 48 : GRID_W / 24,
+            flexShrink: 0,
+            textAlign: 'center',
+            fontSize: 8,
+            lineHeight: 1.2,
+            color: '#6b7280',
+            borderLeft: '1px solid #d1d5db',
+            paddingTop: bottom ? 2 : 0,
+            paddingBottom: bottom ? 0 : 2,
+          }}
         >
-          {h.split('\n').map((line, j) => <div key={j}>{line}</div>)}
+          {lbl.split('\n').map((l, j) => <div key={j}>{l}</div>)}
         </div>
       ))}
     </div>
   )
 }
 
-function GridRow({ statusKey, label, entries, color }) {
-  const relevant = entries.filter(e => e.status === statusKey)
-  const totalHours = relevant.reduce((sum, e) => sum + (e.end_hour - e.start_hour), 0)
+function StatusRow({ row, entries }) {
+  const relevant = entries.filter(e => e.status === row.key)
+  const totalH = relevant.reduce((s, e) => s + e.end_hour - e.start_hour, 0)
 
   return (
-    <div className="flex items-stretch border-t border-gray-300">
-      {/* Row label */}
+    <div style={{ display: 'flex', borderTop: '1px solid #d1d5db', minHeight: ROW_H }}>
+      {/* Label */}
       <div
-        className="flex items-center justify-end pr-2 text-right border-r-2 border-gray-400 bg-gray-50 flex-shrink-0"
-        style={{ width: 140, minHeight: ROW_HEIGHT, fontSize: 10, fontWeight: 600 }}
+        style={{
+          width: LABEL_W,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          paddingRight: 8,
+          fontSize: 10,
+          fontWeight: 600,
+          color: '#374151',
+          borderRight: '2px solid #9ca3af',
+          background: '#f9fafb',
+        }}
       >
-        {label}
+        {row.label}
       </div>
 
-      {/* Grid SVG */}
-      <div className="relative flex-shrink-0" style={{ width: GRID_WIDTH, height: ROW_HEIGHT }}>
-        <svg width={GRID_WIDTH} height={ROW_HEIGHT} style={{ display: 'block' }}>
-          {/* Grid lines */}
+      {/* SVG grid */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <svg width={GRID_W} height={ROW_H} style={{ display: 'block' }}>
+          {/* Background */}
+          <rect width={GRID_W} height={ROW_H} fill="white" />
+
+          {/* Vertical grid lines */}
           {Array.from({ length: 25 }, (_, i) => (
             <line
-              key={i}
-              x1={hourToX(i)} y1={0}
-              x2={hourToX(i)} y2={ROW_HEIGHT}
-              stroke={i % 6 === 0 ? '#9ca3af' : i % 1 === 0 ? '#d1d5db' : '#e5e7eb'}
-              strokeWidth={i % 6 === 0 ? 1.5 : 0.5}
+              key={`v${i}`}
+              x1={px(i)} y1={0} x2={px(i)} y2={ROW_H}
+              stroke={i % 12 === 0 ? '#374151' : i % 6 === 0 ? '#6b7280' : '#e5e7eb'}
+              strokeWidth={i % 12 === 0 ? 1.5 : i % 6 === 0 ? 1 : 0.5}
             />
           ))}
-          {/* Quarter-hour tick marks along bottom */}
+
+          {/* 15-min tick marks at bottom */}
           {Array.from({ length: 24 * 4 + 1 }, (_, i) => {
-            const x = (i / (24 * 4)) * GRID_WIDTH
+            const x = (i / (24 * 4)) * GRID_W
+            const isHour = i % 4 === 0
+            if (isHour) return null
             const isHalf = i % 2 === 0
-            const tickLen = isHalf ? 6 : 4
             return (
-              <line
-                key={`tick-${i}`}
-                x1={x} y1={ROW_HEIGHT}
-                x2={x} y2={ROW_HEIGHT - tickLen}
-                stroke="#d1d5db"
-                strokeWidth={0.5}
+              <line key={`t${i}`}
+                x1={x} y1={ROW_H}
+                x2={x} y2={ROW_H - (isHalf ? 8 : 5)}
+                stroke="#d1d5db" strokeWidth={0.5}
               />
             )
           })}
 
-          {/* Duty status bars */}
+          {/* Duty bars */}
           {relevant.map((entry, i) => {
-            const x = hourToX(entry.start_hour)
-            const w = hourToX(entry.end_hour) - x
+            const x = px(entry.start_hour)
+            const w = px(entry.end_hour) - x
             if (w <= 0) return null
             return (
-              <rect
-                key={i}
-                x={x}
-                y={4}
-                width={w}
-                height={ROW_HEIGHT - 8}
-                fill={color}
-                opacity={0.85}
-                rx={2}
-              />
-            )
-          })}
-
-          {/* Horizontal line through middle (ELD style) */}
-          {relevant.map((entry, i) => {
-            const x1 = hourToX(entry.start_hour)
-            const x2 = hourToX(entry.end_hour)
-            if (x2 <= x1) return null
-            return (
-              <line
-                key={`line-${i}`}
-                x1={x1} y1={ROW_HEIGHT / 2}
-                x2={x2} y2={ROW_HEIGHT / 2}
-                stroke="white"
-                strokeWidth={1.5}
-                opacity={0.7}
-              />
+              <g key={i}>
+                <rect x={x} y={5} width={w} height={ROW_H - 10} fill={row.color} opacity={0.88} rx={2} />
+                {/* Center horizontal line (ELD style) */}
+                <line x1={x} y1={ROW_H / 2} x2={x + w} y2={ROW_H / 2}
+                  stroke="white" strokeWidth={1.5} opacity={0.6} />
+                {/* Vertical drop lines at start/end */}
+                <line x1={x} y1={0} x2={x} y2={ROW_H} stroke={row.color} strokeWidth={1.5} opacity={0.5} />
+                <line x1={x + w} y1={0} x2={x + w} y2={ROW_H} stroke={row.color} strokeWidth={1.5} opacity={0.5} />
+              </g>
             )
           })}
         </svg>
@@ -228,157 +279,76 @@ function GridRow({ statusKey, label, entries, color }) {
 
       {/* Total hours */}
       <div
-        className="flex items-center justify-center border-l-2 border-gray-400 bg-gray-50 font-semibold text-gray-700 flex-shrink-0"
-        style={{ width: 50, fontSize: 11 }}
+        style={{
+          width: TOTAL_W,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderLeft: '2px solid #9ca3af',
+          fontSize: 12,
+          fontWeight: 700,
+          color: totalH > 0 ? row.color : '#9ca3af',
+          background: '#f9fafb',
+        }}
       >
-        {totalHours.toFixed(2)}
+        {totalH.toFixed(2)}
       </div>
     </div>
   )
 }
 
-function RemarksRow({ entries }) {
-  // Show location labels at status change points
+function RemarksStrip({ entries }) {
+  /* Show location labels at status-change boundaries */
   const changes = []
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i]
-    if (e.location && e.location !== (entries[i - 1]?.location || '')) {
-      changes.push({ hour: e.start_hour, location: e.location })
+    const prev = entries[i - 1]
+    if (!prev || e.status !== prev.status || e.location !== prev.location) {
+      changes.push({ hour: e.start_hour, label: e.location?.split(',')[0] || '' })
     }
   }
 
   return (
-    <div className="flex border-t border-gray-400">
+    <div style={{ display: 'flex', borderTop: '1px solid #9ca3af' }}>
       <div
-        className="flex items-center justify-end pr-2 text-right border-r-2 border-gray-400 bg-gray-50 flex-shrink-0 text-xs font-semibold"
-        style={{ width: 140, minHeight: 28 }}
+        style={{
+          width: LABEL_W, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          paddingRight: 8, fontSize: 10, fontWeight: 700, color: '#374151',
+          borderRight: '2px solid #9ca3af', background: '#f9fafb', minHeight: 32,
+        }}
       >
         REMARKS
       </div>
-      <div className="relative flex-1" style={{ height: 28 }}>
-        <svg width={GRID_WIDTH} height={28}>
-          {/* Vertical marks at status changes */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <svg width={GRID_W} height={32}>
           {changes.map((c, i) => (
             <g key={i}>
-              <line
-                x1={hourToX(c.hour)} y1={0}
-                x2={hourToX(c.hour)} y2={10}
-                stroke="#374151"
-                strokeWidth={1}
-              />
-              <text
-                x={hourToX(c.hour) + 2}
-                y={22}
-                fontSize={7}
-                fill="#374151"
-                style={{ fontStyle: 'italic' }}
-              >
-                {c.location.split(',')[0]}
+              <line x1={px(c.hour)} y1={0} x2={px(c.hour)} y2={12} stroke="#374151" strokeWidth={1} />
+              <text x={px(c.hour) + 2} y={26} fontSize={7} fill="#374151" fontStyle="italic">
+                {c.label}
               </text>
             </g>
           ))}
         </svg>
       </div>
+      <div style={{ width: TOTAL_W, flexShrink: 0, borderLeft: '2px solid #9ca3af', background: '#f9fafb' }} />
     </div>
   )
 }
 
-function HoursSummary({ hours }) {
-  const rows = [
-    { key: 'off_duty', label: '1. Off Duty', color: '#64748b' },
-    { key: 'sleeper_berth', label: '2. Sleeper Berth', color: '#7c3aed' },
-    { key: 'driving', label: '3. Driving', color: '#2563eb' },
-    { key: 'on_duty_not_driving', label: '4. On Duty (Not Driving)', color: '#16a34a' },
-  ]
-  const total = Object.values(hours).reduce((a, b) => a + b, 0)
+/* ── Helpers ─────────────────────────────────────────────────────── */
 
-  return (
-    <div className="mt-4 flex flex-wrap gap-3">
-      {rows.map(r => (
-        <div key={r.key} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-          <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: r.color }} />
-          <span className="text-xs text-gray-600">{r.label}</span>
-          <span className="text-sm font-bold text-gray-900">{hours[r.key]?.toFixed(2) || '0.00'}h</span>
-        </div>
-      ))}
-      <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2">
-        <span className="text-xs text-gray-300">TOTAL</span>
-        <span className="text-sm font-bold text-white">{total.toFixed(2)}h</span>
-      </div>
-    </div>
-  )
+function fmt12(h) {
+  const totalMin = Math.round(h * 60)
+  const hrs = Math.floor(totalMin / 60) % 24
+  const mins = totalMin % 60
+  const ap = hrs >= 12 ? 'PM' : 'AM'
+  const dh = hrs % 12 || 12
+  return `${dh}:${String(mins).padStart(2, '0')} ${ap}`
 }
 
-function RemarksText({ entries }) {
-  const remarks = entries
-    .filter(e => e.remarks || e.location)
-    .map(e => {
-      const time = formatHour(e.start_hour)
-      const loc = e.location ? `— ${e.location}` : ''
-      const note = e.remarks ? `(${e.remarks})` : ''
-      return `${time}: ${statusLabel(e.status)} ${note} ${loc}`.trim()
-    })
-
-  return (
-    <div className="mt-4 border-t border-gray-200 pt-3">
-      <div className="text-xs font-semibold text-gray-700 mb-2">Remarks / Location Changes:</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-        {remarks.map((r, i) => (
-          <div key={i} className="text-xs text-gray-600 font-mono">{r}</div>
-        ))}
-      </div>
-      <p className="text-xs text-gray-500 mt-2 italic">
-        Enter name of place you reported and where released from work and when and where each change of duty occurred.
-        Use time standard of home terminal.
-      </p>
-    </div>
-  )
-}
-
-function Footer({ log }) {
-  return (
-    <div className="mt-4 border-t-2 border-gray-300 pt-3 grid grid-cols-2 gap-4">
-      <div>
-        <div className="text-xs text-gray-500 mb-1">Driver Signature / Certification</div>
-        <div className="border-b border-gray-400 h-6 w-full" />
-        <div className="text-xs text-gray-400 mt-1">I certify that these entries are true and correct.</div>
-      </div>
-      <div className="text-xs text-gray-500 space-y-1">
-        <div className="font-semibold text-gray-700">Recap — Complete at end of day</div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <div>On-duty hours today:</div>
-            <div className="font-semibold text-gray-800">
-              {((log.hours.driving || 0) + (log.hours.on_duty_not_driving || 0)).toFixed(2)}h
-            </div>
-          </div>
-          <div>
-            <div>Total lines 3 & 4:</div>
-            <div className="font-semibold text-gray-800">
-              {((log.hours.driving || 0) + (log.hours.on_duty_not_driving || 0)).toFixed(2)}h
-            </div>
-          </div>
-        </div>
-        <div className="text-gray-400 mt-1">70-hour / 8-day cycle</div>
-      </div>
-    </div>
-  )
-}
-
-function formatHour(h) {
-  const total_min = Math.round(h * 60)
-  const hours = Math.floor(total_min / 60) % 24
-  const mins = total_min % 60
-  const ampm = hours >= 12 ? 'PM' : 'AM'
-  const displayH = hours % 12 || 12
-  return `${displayH}:${String(mins).padStart(2, '0')} ${ampm}`
-}
-
-function statusLabel(status) {
-  return {
-    off_duty: 'Off Duty',
-    sleeper_berth: 'Sleeper Berth',
-    driving: 'Driving',
-    on_duty_not_driving: 'On Duty (Not Driving)',
-  }[status] || status
+function statusShort(s) {
+  return { off_duty: 'Off Duty', sleeper_berth: 'Sleeper Berth', driving: 'Driving', on_duty_not_driving: 'On Duty ND' }[s] || s
 }

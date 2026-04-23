@@ -19,7 +19,13 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); s=d['summary']; print\\(f'Miles: {s[\\\\\"total_distance_miles\\\\\"]}  Days: {s[\\\\\"total_days\\\\\"]}  Stops: {s[\\\\\"total_stops\\\\\"]}  DriveHrs: {s[\\\\\"total_driving_hours\\\\\"]}'\\)\")",
       "Bash(curl -s http://localhost:8000/api/trip-plan/ -X POST -H \"Content-Type: application/json\" -d \"{\\\\\"current_location\\\\\":\\\\\"Los Angeles, CA\\\\\",\\\\\"pickup_location\\\\\":\\\\\"Phoenix, AZ\\\\\",\\\\\"dropoff_location\\\\\":\\\\\"Denver, CO\\\\\",\\\\\"current_cycle_used_hours\\\\\":0}\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); s=d['summary']; print\\('Miles:',s['total_distance_miles'],'Days:',s['total_days'],'Stops:',s['total_stops']\\)\")",
-      "Bash(python manage.py collectstatic --noinput)"
+      "Bash(python manage.py collectstatic --noinput)",
+      "Bash(python manage.py shell -c ' *)",
+      "Bash(curl -s \"https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf6248a355e7ac61c44d9f89f1e8e7b1e8e7ac&text=Dallas,TX&size=1\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); f=d.get\\('features',[]\\); print\\('ORS Geocode OK:', f[0]['properties']['label'] if f else 'No results'\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2\\)[:500]\\)\")",
+      "Bash(curl -s \"http://router.project-osrm.org/route/v1/driving/-96.797,32.7767;-97.5164,35.4676;-86.7816,36.1627?overview=full&geometries=geojson\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); r=d['routes'][0]; legs=r['legs']; print\\('OSRM OK - Total:', round\\(r['distance']*0.000621,1\\), 'mi, Legs:', [round\\(l['distance']*0.000621,1\\) for l in legs]\\)\")"
     ]
   }
 }

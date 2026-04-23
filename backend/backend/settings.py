@@ -3,11 +3,11 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-^=jm(f!3y-q09exaivawkmes7okw)lbs2*tq^^gg@*)(cwfss$'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^=jm(f!3y-q09exaivawkmes7okw)lbs2*tq^^gg@*)(cwfss$')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,6 +34,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -65,6 +66,7 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -75,5 +77,4 @@ REST_FRAMEWORK = {
     ],
 }
 
-# OpenRouteService API key (free tier)
-ORS_API_KEY = os.environ.get('ORS_API_KEY', '5b3ce3597851110001cf6248a355e7ac61c44d9f89f1e8e7b1e8e7ac')
+# Routing: Nominatim + OSRM (both free, no API key needed)
